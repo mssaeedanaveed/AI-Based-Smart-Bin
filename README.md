@@ -526,7 +526,9 @@ The Smart Bin concept can be applied in:
 
 ## 📜 License
 
-This project was developed as an academic Final Year Project. Add an appropriate open-source license if the project is intended for public reuse or modification.
+© 2026 Saeeda Naveed. All rights reserved.
+
+This project was developed as an academic Final Year Project. This code and its associated documentation are proprietary and may not be copied, modified, distributed, or used in any form without the explicit written permission of the author. This repository is made public for portfolio and demonstration purposes only.
 
 ---
 
