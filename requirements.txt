@@ -1,0 +1,10 @@
+Flask
+firebase-admin
+python-dotenv
+yagmail
+opencv-python
+ultralytics
+google-generativeai
+Pillow
+requests
+Werkzeug

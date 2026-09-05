@@ -1,0 +1,392 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Employee Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: all 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    
+    .stats-icon {
+        font-size: 3.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        color: rgba(255,255,255,0.8);
+        font-size: 1rem;
+    }
+    
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .employee-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Quick link to realtime Dustbin Status page -->
+<div class="d-flex justify-content-end mb-3">
+    <a href="{{ url_for('dustbin_status') }}" class="btn btn-primary">
+        <i class="bi bi-trash-fill"></i> View Dustbin Status
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-people-fill stats-icon" style="color: #3498db;"></i>
+            <div class="stats-number">{{ users|length }}</div>
+            <div class="stats-label">Total Employees</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-check-circle-fill stats-icon" style="color: #27ae60;"></i>
+            <div class="stats-number">{{ users|selectattr('approved', 'equalto', True)|list|length }}</div>
+            <div class="stats-label">Approved</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-clock-fill stats-icon" style="color: #f39c12;"></i>
+            <div class="stats-number">{{ users|selectattr('approved', 'equalto', False)|list|length }}</div>
+            <div class="stats-label">Pending Approval</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-graph-up-arrow stats-icon" style="color: #e74c3c;"></i>
+            <div class="stats-number">
+                {% if users|length > 0 %}
+                    {{ ((users|sum(attribute='plastic_level', start=0) + users|sum(attribute='metal_level', start=0) + users|sum(attribute='organic_level', start=0)) / (users|length * 3))|round|int }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="stats-label">Avg. Fill Level</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <h5><i class="bi bi-pie-chart-fill"></i> Overall Waste Distribution</h5>
+            <div id="overallWasteChart"></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <h5><i class="bi bi-bar-chart-fill"></i> Employee Performance</h5>
+            <div id="employeePerformanceChart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Table -->
+<div class="employee-table">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-list-ul"></i> Employee Accounts & Waste Levels</h4>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white;">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Plastic Level</th>
+                        <th>Metal Level</th>
+                        <th>Organic Level</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for user in users %}
+                        <tr>
+                            <td><i class="bi bi-person-circle"></i> {{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ user.plastic_level|default(0) }}%">
+                                        {{ user.plastic_level|default(0) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-secondary" role="progressbar" 
+                                         style="width: {{ user.metal_level|default(0) }}%">
+                                        {{ user.metal_level|default(0) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ user.organic_level|default(0) }}%">
+                                        {{ user.organic_level|default(0) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if user.approved %}
+                                    <span class="badge badge-approved">
+                                        <i class="bi bi-check-circle"></i> Approved
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-pending">
+                                        <i class="bi bi-clock"></i> Pending
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not user.approved %}
+                                    <a href="{{ url_for('approve_user', user_id=user.id) }}" 
+                                       class="btn btn-approve btn-sm" 
+                                       onclick="return confirm('Approve this employee?')">
+                                        <i class="bi bi-check"></i> Approve
+                                    </a>
+                                    <a href="{{ url_for('reject_user', user_id=user.id) }}" 
+                                       class="btn btn-reject btn-sm" 
+                                       onclick="return confirm('Reject and delete this employee?')">
+                                        <i class="bi bi-x"></i> Reject
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Active</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i> No employees registered yet
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Analytics Chart -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="chart-card">
+            <h5><i class="bi bi-activity"></i> Waste Level Trends</h5>
+            <div id="wasteTrendsChart"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Highcharts -->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+
+<script>
+    // Calculate totals
+    const totalPlastic = {% if users %}{{ users|sum(attribute='plastic_level', start=0) }}{% else %}0{% endif %};
+    const totalMetal = {% if users %}{{ users|sum(attribute='metal_level', start=0) }}{% else %}0{% endif %};
+    const totalOrganic = {% if users %}{{ users|sum(attribute='organic_level', start=0) }}{% else %}0{% endif %};
+    
+    // Overall Waste Distribution Pie Chart
+    Highcharts.chart('overallWasteChart', {
+        chart: {
+            type: 'pie',
+            backgroundColor: 'transparent'
+        },
+        title: {
+            text: null
+        },
+        tooltip: {
+            pointFormat: '<b>{point.y:.0f}%</b> ({point.percentage:.1f}%)'
+        },
+        plotOptions: {
+            pie: {
+                innerSize: '50%',
+                dataLabels: {
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.y:.0f}%'
+                }
+            }
+        },
+        series: [{
+            name: 'Waste Type',
+            data: [
+                { name: 'Plastic', y: totalPlastic, color: '#e74c3c' },
+                { name: 'Metal', y: totalMetal, color: '#95a5a6' },
+                { name: 'Organic', y: totalOrganic, color: '#27ae60' }
+            ]
+        }],
+        credits: { enabled: false }
+    });
+    
+    // Employee Performance Chart
+    const employeeNames = [
+        {% for user in users %}
+            '{{ user.name[:15] }}',
+        {% endfor %}
+    ];
+    
+    const plasticData = [
+        {% for user in users %}
+            {{ user.plastic_level|default(0) }},
+        {% endfor %}
+    ];
+    
+    const metalData = [
+        {% for user in users %}
+            {{ user.metal_level|default(0) }},
+        {% endfor %}
+    ];
+    
+    const organicData = [
+        {% for user in users %}
+            {{ user.organic_level|default(0) }},
+        {% endfor %}
+    ];
+    
+    Highcharts.chart('employeePerformanceChart', {
+        chart: {
+            type: 'column',
+            backgroundColor: 'transparent'
+        },
+        title: {
+            text: null
+        },
+        xAxis: {
+            categories: employeeNames,
+            title: {
+                text: 'Employees'
+            }
+        },
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: {
+                text: 'Fill Level (%)'
+            }
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}%<br/>Total: {point.stackTotal}%'
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: false
+                }
+            }
+        },
+        series: [{
+            name: 'Plastic',
+            data: plasticData,
+            color: '#e74c3c'
+        }, {
+            name: 'Metal',
+            data: metalData,
+            color: '#95a5a6'
+        }, {
+            name: 'Organic',
+            data: organicData,
+            color: '#27ae60'
+        }],
+        credits: { enabled: false }
+    });
+    
+    // Waste Level Trends Line Chart
+    Highcharts.chart('wasteTrendsChart', {
+        chart: {
+            type: 'line',
+            backgroundColor: 'transparent'
+        },
+        title: {
+            text: null
+        },
+        xAxis: {
+            categories: employeeNames,
+            title: {
+                text: 'Employees'
+            }
+        },
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: {
+                text: 'Fill Level (%)'
+            }
+        },
+        tooltip: {
+            valueSuffix: '%'
+        },
+        plotOptions: {
+            line: {
+                dataLabels: {
+                    enabled: true,
+                    format: '{y}%'
+                },
+                enableMouseTracking: true
+            }
+        },
+        series: [{
+            name: 'Plastic Level',
+            data: plasticData,
+            color: '#e74c3c'
+        }, {
+            name: 'Metal Level',
+            data: metalData,
+            color: '#95a5a6'
+        }, {
+            name: 'Organic Level',
+            data: organicData,
+            color: '#27ae60'
+        }],
+        credits: { enabled: false }
+    });
+    
+    // Auto refresh every 30 seconds
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,412 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Dustbin Status{% endblock %}
+{% block page_title %}Realtime Dustbin Status{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bin-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .bin-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+
+    .bin-icon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    .bin-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .bin-status-badge {
+        display: inline-block;
+        padding: 6px 18px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+
+    .status-empty {
+        background: #27ae60;
+        color: #fff;
+    }
+
+    .status-full {
+        background: #e74c3c;
+        color: #fff;
+        animation: pulseAlert 1.2s infinite;
+    }
+
+    .status-medium {
+        background: #f39c12;
+        color: #fff;
+    }
+
+    @keyframes pulseAlert {
+        0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.6); }
+        70% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    }
+
+    .bin-progress-wrap {
+        background: rgba(255,255,255,0.2);
+        border-radius: 10px;
+        height: 24px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+
+    .bin-progress-fill {
+        height: 100%;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: width 0.6s ease;
+    }
+
+    .bin-meta {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.9rem;
+        margin-top: 8px;
+    }
+
+    .last-updated {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.8rem;
+        margin-top: 15px;
+        text-align: center;
+    }
+
+    #metalCard { background: linear-gradient(135deg, rgba(149,165,166,0.35), rgba(149,165,166,0.15)); }
+    #organicCard { background: linear-gradient(135deg, rgba(39,174,96,0.35), rgba(39,174,96,0.15)); }
+    #plasticCard { background: linear-gradient(135deg, rgba(231,76,60,0.35), rgba(231,76,60,0.15)); }
+
+    /* ---- AI Agent Panel ---- */
+    .agent-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .agent-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .agent-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .agent-dot.on { background: #27ae60; box-shadow: 0 0 8px #27ae60; }
+    .agent-dot.off { background: #95a5a6; }
+
+    .agent-result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .agent-result-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 14px;
+        border-left: 4px solid #3498db;
+    }
+
+    .agent-result-item .label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .agent-result-item .value {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .agent-error {
+        color: #e74c3c;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="bin-card" id="metalCard">
+            <div class="bin-icon"><i class="bi bi-gear-fill" style="color:#95a5a6;"></i></div>
+            <div class="bin-name">Metal Bin</div>
+            <div class="bin-status-badge status-empty" id="metal-status-badge">{{ bins.Metal.dustbinStatus }}</div>
+            <div class="bin-progress-wrap">
+                <div class="bin-progress-fill" id="metal-progress" style="width: {{ bins.Metal.dustbinLevel }}%; background:#95a5a6;">
+                    {{ bins.Metal.dustbinLevel }}%
+                </div>
+            </div>
+            <div class="bin-meta">Height: <span id="metal-height">{{ bins.Metal.dustbinHeight }}</span> cm</div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="bin-card" id="organicCard">
+            <div class="bin-icon"><i class="bi bi-flower1" style="color:#27ae60;"></i></div>
+            <div class="bin-name">Organic Bin</div>
+            <div class="bin-status-badge status-empty" id="organic-status-badge">{{ bins.Organic.dustbinStatus }}</div>
+            <div class="bin-progress-wrap">
+                <div class="bin-progress-fill" id="organic-progress" style="width: {{ bins.Organic.dustbinLevel }}%; background:#27ae60;">
+                    {{ bins.Organic.dustbinLevel }}%
+                </div>
+            </div>
+            <div class="bin-meta">Height: <span id="organic-height">{{ bins.Organic.dustbinHeight }}</span> cm</div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="bin-card" id="plasticCard">
+            <div class="bin-icon"><i class="bi bi-cup-straw" style="color:#e74c3c;"></i></div>
+            <div class="bin-name">Plastic Bin</div>
+            <div class="bin-status-badge status-empty" id="plastic-status-badge">{{ bins.Plastic.dustbinStatus }}</div>
+            <div class="bin-progress-wrap">
+                <div class="bin-progress-fill" id="plastic-progress" style="width: {{ bins.Plastic.dustbinLevel }}%; background:#e74c3c;">
+                    {{ bins.Plastic.dustbinLevel }}%
+                </div>
+            </div>
+            <div class="bin-meta">Height: <span id="plastic-height">{{ bins.Plastic.dustbinHeight }}</span> cm</div>
+        </div>
+    </div>
+</div>
+
+<div class="last-updated mb-4">
+    <i class="bi bi-arrow-repeat"></i> Auto-refreshing every 5 seconds &middot; Last updated: <span id="last-updated-time">--</span>
+</div>
+
+<!-- ✅ AI Detection Agent Panel -->
+<div class="agent-card">
+    <h5 class="mb-3"><i class="bi bi-camera-video-fill"></i> Image Processing</h5>
+
+    <div class="agent-controls">
+        <span class="agent-dot off" id="agent-dot"></span>
+        <span id="agent-state-text" style="font-weight:600;">Stopped</span>
+
+        <button class="btn btn-success btn-sm ms-3" id="agent-start-btn" onclick="startAgent()">
+            <i class="bi bi-play-fill"></i> Start Agent
+        </button>
+        <button class="btn btn-danger btn-sm" id="agent-stop-btn" onclick="stopAgent()">
+            <i class="bi bi-stop-fill"></i> Stop Agent
+        </button>
+    </div>
+
+    <div id="agent-error" class="agent-error" style="display:none;"></div>
+
+    <div class="agent-result-grid" id="agent-result-grid" style="display:none;">
+        <div class="agent-result-item">
+            <div class="label">Item Present</div>
+            <div class="value" id="ar-item-present">--</div>
+        </div>
+        <div class="agent-result-item">
+            <div class="label">Detected Item</div>
+            <div class="value" id="ar-detected-item">--</div>
+        </div>
+        <div class="agent-result-item">
+            <div class="label">Category</div>
+            <div class="value" id="ar-category">--</div>
+        </div>
+        <div class="agent-result-item">
+            <div class="label">Confidence</div>
+            <div class="value" id="ar-confidence">--</div>
+        </div>
+        <div class="agent-result-item">
+            <div class="label">Firebase Status</div>
+            <div class="value" id="ar-firebase-status">--</div>
+        </div>
+        <div class="agent-result-item">
+            <div class="label">Last Checked</div>
+            <div class="value" id="ar-last-checked">--</div>
+        </div>
+    </div>
+
+    <div class="agent-result-item mt-3" id="ar-reason-box" style="display:none; border-left-color:#f39c12;">
+        <div class="label">Reason</div>
+        <div class="value" id="ar-reason">--</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const BIN_IDS = {
+        Metal: 'metal',
+        Organic: 'organic',
+        Plastic: 'plastic'
+    };
+
+    function applyStatusClass(badgeEl, status) {
+        badgeEl.classList.remove('status-empty', 'status-full', 'status-medium');
+        const s = (status || '').toUpperCase();
+        if (s === 'FULL') {
+            badgeEl.classList.add('status-full');
+        } else if (s === 'MEDIUM' || s === 'HALF') {
+            badgeEl.classList.add('status-medium');
+        } else {
+            badgeEl.classList.add('status-empty');
+        }
+    }
+
+    function updateBinUI(binName, data) {
+        const prefix = BIN_IDS[binName];
+        const badge = document.getElementById(`${prefix}-status-badge`);
+        const progress = document.getElementById(`${prefix}-progress`);
+        const height = document.getElementById(`${prefix}-height`);
+
+        const level = Math.max(0, Math.min(100, parseFloat(data.dustbinLevel) || 0));
+
+        badge.textContent = data.dustbinStatus || 'EMPTY';
+        applyStatusClass(badge, data.dustbinStatus);
+
+        progress.style.width = level + '%';
+        progress.textContent = level + '%';
+
+        height.textContent = data.dustbinHeight;
+    }
+
+    async function refreshDustbinStatus() {
+        try {
+            const res = await fetch("{{ url_for('api_dustbin_status') }}");
+            const data = await res.json();
+
+            if (data.success) {
+                Object.keys(data.bins).forEach(binName => {
+                    updateBinUI(binName, data.bins[binName]);
+                });
+                document.getElementById('last-updated-time').textContent = new Date().toLocaleTimeString();
+            }
+        } catch (err) {
+            console.error('Dustbin status fetch failed:', err);
+        }
+    }
+
+    // Initial class setup + poll every 5 seconds
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshDustbinStatus();
+        setInterval(refreshDustbinStatus, 5000);
+
+        refreshAgentStatus();
+        setInterval(refreshAgentStatus, 3000);
+    });
+
+    // ---------------------------------------------
+    // AI Agent controls (Start / Stop / Status poll)
+    // ---------------------------------------------
+    async function startAgent() {
+        try {
+            const res = await fetch("{{ url_for('agent_bp.start_agent') }}", { method: 'POST' });
+            const data = await res.json();
+            if (!data.success) {
+                alert(data.error || 'Agent start nahi ho saka');
+            }
+            refreshAgentStatus();
+        } catch (err) {
+            console.error('Agent start failed:', err);
+        }
+    }
+
+    async function stopAgent() {
+        try {
+            const res = await fetch("{{ url_for('agent_bp.stop_agent') }}", { method: 'POST' });
+            const data = await res.json();
+            if (!data.success) {
+                alert(data.error || 'Agent stop nahi ho saka');
+            }
+            refreshAgentStatus();
+        } catch (err) {
+            console.error('Agent stop failed:', err);
+        }
+    }
+
+    async function refreshAgentStatus() {
+        try {
+            const res = await fetch("{{ url_for('agent_bp.agent_status') }}");
+            const data = await res.json();
+
+            if (!data.success) return;
+
+            const dot = document.getElementById('agent-dot');
+            const stateText = document.getElementById('agent-state-text');
+            const errorBox = document.getElementById('agent-error');
+            const resultGrid = document.getElementById('agent-result-grid');
+            const reasonBox = document.getElementById('ar-reason-box');
+
+            if (data.running) {
+                dot.classList.remove('off');
+                dot.classList.add('on');
+                stateText.textContent = 'Running';
+            } else {
+                dot.classList.remove('on');
+                dot.classList.add('off');
+                stateText.textContent = 'Stopped';
+            }
+
+            if (data.error) {
+                errorBox.style.display = 'block';
+                errorBox.textContent = data.error;
+            } else {
+                errorBox.style.display = 'none';
+            }
+
+            if (data.last_result) {
+                resultGrid.style.display = 'grid';
+                reasonBox.style.display = 'block';
+
+                document.getElementById('ar-item-present').textContent = data.last_result.item_present || '--';
+                document.getElementById('ar-detected-item').textContent = data.last_result.detected_item || '--';
+                document.getElementById('ar-category').textContent = data.last_result.category || '--';
+                document.getElementById('ar-confidence').textContent = (data.last_result.confidence ?? '--') + '%';
+                document.getElementById('ar-firebase-status').textContent = data.last_firebase_status || '--';
+                document.getElementById('ar-last-checked').textContent = data.last_checked_at
+                    ? new Date(data.last_checked_at).toLocaleTimeString()
+                    : '--';
+                document.getElementById('ar-reason').textContent = data.last_result.reason || '--';
+            }
+        } catch (err) {
+            console.error('Agent status fetch failed:', err);
+        }
+    }
+</script>
+{% endblock %}

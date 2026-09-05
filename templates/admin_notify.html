@@ -1,0 +1,171 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Bin Alerts & Notifications{% endblock %}
+
+{% block content %}
+
+<div class="row g-4">
+
+  <!-- Scan Card -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0">
+            <i class="bi bi-bell-fill me-2"></i>Auto Scan & Alerts
+          </h5>
+          <small>
+            Alert level: <b>{{ threshold }}%</b> — Admin email: <b>{{ admin_email }}</b>
+          </small>
+        </div>
+
+        <form method="POST">
+          <input type="hidden" name="action" value="scan_now">
+          <button class="btn btn-light btn-sm">
+            <i class="bi bi-search me-1"></i>Scan Now
+          </button>
+        </form>
+      </div>
+
+      <div class="card-body">
+        <div class="alert alert-info mb-0">
+          This page runs an <b>automatic scan</b> when it opens.
+          Only bins that are <b>100% full</b> will show here.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Bin Alerts -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Full Bin Alerts (100%)
+        </h5>
+      </div>
+
+      <div class="card-body">
+        {% if open_alerts|length == 0 %}
+          <div class="alert alert-success mb-0">
+            <i class="bi bi-check-circle-fill me-2"></i>No bins are 100% full right now.
+          </div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Bin Type</th>
+                  <th>Level</th>
+                  <th>Alert Time</th>
+                  <th style="width: 380px;">Clear Bin</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for a in open_alerts %}
+                <tr>
+                  <td><b>{{ a.user_name }}</b></td>
+                  <td>{{ a.user_email }}</td>
+                  <td><span class="badge bg-danger">{{ a.bin_type }}</span></td>
+                  <td><span class="badge bg-dark">{{ a.level }}%</span></td>
+                  <td class="small text-muted">{{ a.created_at }}</td>
+
+                  <td>
+                    <form method="POST" class="row g-2">
+                      <input type="hidden" name="action" value="clear_bin">
+                      <input type="hidden" name="user_id" value="{{ a.user_id }}">
+                      <input type="hidden" name="bin_type" value="{{ a.bin_type }}">
+
+                      <div class="col-6">
+                        <input class="form-control form-control-sm"
+                               name="cleared_by"
+                               placeholder="Cleared by (name)"
+                               required>
+                      </div>
+
+                      <div class="col-6">
+                        <input class="form-control form-control-sm"
+                               name="apartment"
+                               placeholder="Apartment / Location"
+                               required>
+                      </div>
+
+                      <div class="col-12">
+                        <input class="form-control form-control-sm"
+                               name="note"
+                               placeholder="Optional note">
+                      </div>
+
+                      <div class="col-12">
+                        <button class="btn btn-success btn-sm w-100"
+                                onclick="return confirm('Are you sure you want to clear this bin? It will be set to 0%.');">
+                          <i class="bi bi-trash-fill me-1"></i>Clear Bin (Set to 0%)
+                        </button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Cleanup History -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-clock-history me-2"></i>Cleanup History
+        </h5>
+      </div>
+
+      <div class="card-body">
+        {% if cleanups|length == 0 %}
+          <div class="alert alert-secondary mb-0">No cleanup records yet.</div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User</th>
+                  <th>Bin Type</th>
+                  <th>Cleared By</th>
+                  <th>Apartment</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for c in cleanups %}
+                <tr>
+                  <td class="small text-muted">{{ c.timestamp }}</td>
+                  <td>
+                    <b>{{ c.user_name }}</b>
+                    <div class="small text-muted">{{ c.user_email }}</div>
+                  </td>
+                  <td><span class="badge bg-primary">{{ c.bin_type }}</span></td>
+                  <td>{{ c.cleared_by }}</td>
+                  <td>{{ c.apartment }}</td>
+                  <td class="small">{{ c.note }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}User Dashboard{% endblock %} - Smart Dust Bin</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --plastic-color: #e74c3c;
+            --metal-color: #95a5a6;
+            --organic-color: #27ae60;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--primary-color) 0%, #2980b9 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            margin: 5px 10px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #5dade2);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            padding: 30px 20px;
+            color: white;
+        }
+
+        .logo i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .logo h4 {
+            font-weight: 600;
+        }
+
+        .level-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .level-progress {
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #ecf0f1;
+        }
+
+        .level-progress-bar {
+            height: 100%;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .plastic-progress {
+            background: linear-gradient(90deg, var(--plastic-color), #c0392b);
+        }
+
+        .metal-progress {
+            background: linear-gradient(90deg, var(--metal-color), #7f8c8d);
+        }
+
+        .organic-progress {
+            background: linear-gradient(90deg, var(--organic-color), #229954);
+        }
+
+        .collector-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.1rem;
+            border-radius: 15px;
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .collector-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-plastic {
+            background: linear-gradient(135deg, var(--plastic-color), #c0392b);
+        }
+
+        .btn-metal {
+            background: linear-gradient(135deg, var(--metal-color), #7f8c8d);
+        }
+
+        .btn-organic {
+            background: linear-gradient(135deg, var(--organic-color), #229954);
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="logo">
+                    <i class="bi bi-recycle"></i>
+                    <h4>Smart Dust Bin</h4>
+                    <small>Employee Portal</small>
+                </div>
+
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.endpoint == 'user_dashboard' %}active{% endif %}" href="{{ url_for('user_dashboard') }}">
+                        <i class="bi bi-house-door-fill"></i> Dashboard
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'plastic_collector' %}active{% endif %}" href="{{ url_for('plastic_collector') }}">
+                        <i class="bi bi-cup-straw"></i> Plastic Collector
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'metal_collector' %}active{% endif %}" href="{{ url_for('metal_collector') }}">
+                        <i class="bi bi-gear-fill"></i> Metal Collector
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'organic_collector' %}active{% endif %}" href="{{ url_for('organic_collector') }}">
+                        <i class="bi bi-flower1"></i> Organic Collector
+                    </a>
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                <!-- Top Bar -->
+                <div class="top-bar d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{% block page_title %}Dashboard{% endblock %}</h3>
+                        <small class="text-muted">Welcome, {{ session.get('name', 'Employee') }}</small>
+                    </div>
+                    <div>
+                        <i class="bi bi-person-circle" style="font-size: 2rem; color: var(--primary-color);"></i>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Content Block -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

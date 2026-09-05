@@ -1,0 +1,769 @@
+{% extends "user_base.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Root Variables for Consistent Theming */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --plastic-gradient: linear-gradient(135deg, #e74c3c, #c0392b);
+        --metal-gradient: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        --organic-gradient: linear-gradient(135deg, #27ae60, #229954);
+        --card-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        --card-shadow-hover: 0 15px 35px rgba(0,0,0,0.2);
+        --border-radius: 20px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Dashboard Card Styles */
+    .dashboard-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        backdrop-filter: blur(10px);
+        border-radius: var(--border-radius);
+        padding: clamp(20px, 4vw, 30px);
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: var(--transition);
+        height: 100%;
+        box-shadow: var(--card-shadow);
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--card-shadow-hover);
+        border-color: rgba(255,255,255,0.3);
+    }
+
+    /* Chart Container Styles */
+    .chart-container {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: clamp(18px, 3vw, 25px);
+        margin-bottom: clamp(15px, 3vw, 20px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        transition: var(--transition);
+    }
+
+    .chart-container:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+
+    .chart-container h5 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: clamp(15px, 3vw, 20px);
+        font-size: clamp(1rem, 2.5vw, 1.1rem);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .chart-container h5 i {
+        color: #3498db;
+        font-size: clamp(1rem, 2.5vw, 1.2rem);
+    }
+
+    /* Metric Card Styles */
+    .metric-card {
+        background: var(--primary-gradient);
+        color: white;
+        border-radius: var(--border-radius);
+        padding: clamp(20px, 4vw, 30px) clamp(18px, 3vw, 25px);
+        text-align: center;
+        margin-bottom: clamp(15px, 3vw, 20px);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .metric-card:hover::before {
+        opacity: 1;
+    }
+
+    .metric-card:hover {
+        transform: scale(1.05) translateY(-5px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    }
+
+    .metric-card:active {
+        transform: scale(1.02);
+    }
+
+    .metric-icon {
+        font-size: clamp(2rem, 6vw, 3.5rem);
+        margin-bottom: clamp(10px, 2vw, 15px);
+        opacity: 0.95;
+        transition: var(--transition);
+    }
+
+    .metric-card:hover .metric-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .metric-value {
+        font-size: clamp(1.8rem, 5vw, 3rem);
+        font-weight: 800;
+        margin-bottom: 5px;
+        letter-spacing: -1px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        word-break: break-word;
+    }
+
+    .metric-label {
+        font-size: clamp(0.85rem, 2vw, 1rem);
+        opacity: 0.95;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    /* Collector Grid Styles */
+    .collector-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+        gap: clamp(15px, 3vw, 25px);
+        margin-top: clamp(20px, 4vw, 30px);
+    }
+
+    .collector-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: clamp(25px, 4vw, 35px) clamp(20px, 3vw, 25px);
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 2px solid rgba(0,0,0,0.05);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+
+    .collector-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .collector-card:hover::before {
+        left: 100%;
+    }
+
+    .collector-card:hover {
+        transform: translateY(-12px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .collector-card:active {
+        transform: translateY(-8px) scale(0.98);
+    }
+
+    .plastic-card:hover {
+        border-color: #e74c3c;
+        box-shadow: 0 20px 40px rgba(231, 76, 60, 0.3);
+    }
+
+    .metal-card:hover {
+        border-color: #95a5a6;
+        box-shadow: 0 20px 40px rgba(149, 165, 166, 0.3);
+    }
+
+    .organic-card:hover {
+        border-color: #27ae60;
+        box-shadow: 0 20px 40px rgba(39, 174, 96, 0.3);
+    }
+
+    .collector-icon-wrapper {
+        width: clamp(65px, 12vw, 90px);
+        height: clamp(65px, 12vw, 90px);
+        margin: 0 auto clamp(15px, 3vw, 20px);
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(1.8rem, 5vw, 2.8rem);
+        transition: var(--transition);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .collector-card:hover .collector-icon-wrapper {
+        transform: scale(1.15) rotate(-5deg);
+    }
+
+    .plastic-card .collector-icon-wrapper {
+        background: var(--plastic-gradient);
+        color: white;
+    }
+
+    .metal-card .collector-icon-wrapper {
+        background: var(--metal-gradient);
+        color: white;
+    }
+
+    .organic-card .collector-icon-wrapper {
+        background: var(--organic-gradient);
+        color: white;
+    }
+
+    .collector-card h5 {
+        margin-top: 15px;
+        margin-bottom: 10px;
+        font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+        font-weight: 600;
+    }
+
+    .collector-card p {
+        font-size: clamp(0.85rem, 2vw, 0.95rem);
+        line-height: 1.5;
+        color: #7f8c8d;
+        margin: 0;
+    }
+
+    /* Section Headers */
+    .section-header {
+        color: white;
+        font-weight: 600;
+        margin-bottom: clamp(20px, 3vw, 25px);
+        font-size: clamp(1.1rem, 3vw, 1.4rem);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .section-header i {
+        font-size: clamp(1.2rem, 3vw, 1.6rem);
+    }
+
+    /* Loading Animation */
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.6;
+        }
+    }
+
+    .loading {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* Chart Loading */
+    .chart-wrapper {
+        min-height: clamp(220px, 40vw, 300px);
+        position: relative;
+    }
+
+    /* Smooth Scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Touch-friendly spacing on mobile */
+    @media (hover: none) and (pointer: coarse) {
+        .metric-card,
+        .collector-card {
+            margin-bottom: 18px;
+        }
+
+        .collector-grid {
+            gap: 18px;
+        }
+    }
+
+    /* Tablet Optimizations */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .collector-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .metric-card {
+            padding: 25px 20px;
+        }
+    }
+
+    /* Large Screen Optimizations */
+    @media (min-width: 1400px) {
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .chart-container {
+            padding: 30px;
+        }
+    }
+
+    /* Print Styles */
+    @media print {
+        .dashboard-card,
+        .chart-container {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+
+        .metric-card {
+            break-inside: avoid;
+        }
+
+        .collector-card:hover {
+            transform: none;
+        }
+    }
+
+    /* Dark Mode Support (if needed) */
+    @media (prefers-color-scheme: dark) {
+        .chart-container {
+            background: #2c3e50;
+        }
+
+        .chart-container h5 {
+            color: #ecf0f1;
+        }
+
+        .collector-card {
+            background: #34495e;
+            color: #ecf0f1;
+        }
+
+        .collector-card p {
+            color: #bdc3c7;
+        }
+    }
+
+    /* Accessibility Improvements */
+    .collector-card:focus,
+    .metric-card:focus {
+        outline: 3px solid #3498db;
+        outline-offset: 2px;
+    }
+
+    /* Reduced Motion Support */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+
+        .metric-card:hover,
+        .collector-card:hover {
+            transform: none;
+        }
+    }
+
+    /* Small Mobile Optimizations */
+    @media (max-width: 400px) {
+        .metric-card {
+            padding: 18px 15px;
+        }
+
+        .collector-card {
+            padding: 22px 18px;
+        }
+
+        .chart-container {
+            padding: 15px 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="metric-card" style="background: var(--plastic-gradient);" tabindex="0" role="button" aria-label="Plastic level: {{ user.plastic_level|default(0) }} percent">
+            <i class="bi bi-cup-straw metric-icon" aria-hidden="true"></i>
+            <div class="metric-value">{{ user.plastic_level|default(0) }}%</div>
+            <div class="metric-label">Plastic Level</div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="metric-card" style="background: var(--metal-gradient);" tabindex="0" role="button" aria-label="Metal level: {{ user.metal_level|default(0) }} percent">
+            <i class="bi bi-gear-fill metric-icon" aria-hidden="true"></i>
+            <div class="metric-value">{{ user.metal_level|default(0) }}%</div>
+            <div class="metric-label">Metal Level</div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-12 col-sm-12">
+        <div class="metric-card" style="background: var(--organic-gradient);" tabindex="0" role="button" aria-label="Organic level: {{ user.organic_level|default(0) }} percent">
+            <i class="bi bi-flower1 metric-icon" aria-hidden="true"></i>
+            <div class="metric-value">{{ user.organic_level|default(0) }}%</div>
+            <div class="metric-label">Organic Level</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
+        <div class="chart-container">
+            <h5><i class="bi bi-pie-chart-fill" aria-hidden="true"></i> Waste Distribution</h5>
+            <div class="chart-wrapper">
+                <div id="wasteDistributionChart" role="img" aria-label="Waste distribution pie chart"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <div class="chart-container">
+            <h5><i class="bi bi-bar-chart-fill" aria-hidden="true"></i> Bin Fill Levels</h5>
+            <div class="chart-wrapper">
+                <div id="binLevelsChart" role="img" aria-label="Bin fill levels bar chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Collectors Section -->
+<div>
+    <h4 class="section-header"><i class="bi bi-camera-fill" aria-hidden="true"></i> Waste Detection Tools</h4>
+
+    <div class="collector-grid">
+        <a href="{{ url_for('plastic_collector') }}" class="collector-card plastic-card text-decoration-none" tabindex="0" aria-label="Plastic Collector - AI-powered plastic detection">
+            <div class="collector-icon-wrapper">
+                <i class="bi bi-cup-straw" aria-hidden="true"></i>
+            </div>
+            <h5 style="color: #e74c3c;">Plastic Collector</h5>
+            <p>AI-powered plastic detection</p>
+        </a>
+
+        <a href="{{ url_for('metal_collector') }}" class="collector-card metal-card text-decoration-none" tabindex="0" aria-label="Metal Collector - Detect metal waste items">
+            <div class="collector-icon-wrapper">
+                <i class="bi bi-gear-fill" aria-hidden="true"></i>
+            </div>
+            <h5 style="color: #95a5a6;">Metal Collector</h5>
+            <p>Detect metal waste items</p>
+        </a>
+
+        <a href="{{ url_for('organic_collector') }}" class="collector-card organic-card text-decoration-none" tabindex="0" aria-label="Organic Collector - Organic waste detection">
+            <div class="collector-icon-wrapper">
+                <i class="bi bi-flower1" aria-hidden="true"></i>
+            </div>
+            <h5 style="color: #27ae60;">Organic Collector</h5>
+            <p>Organic waste detection</p>
+        </a>
+    </div>
+    <div class="row mt-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5><i class="bi bi-speedometer2" aria-hidden="true"></i> Overall Capacity</h5>
+            <div class="chart-wrapper">
+                <div id="gaugeChart" role="img" aria-label="Overall capacity gauge chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Gauge Chart -->
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Highcharts -->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<script>
+    // Get levels from template
+    const plasticLevel = {{ user.plastic_level|default(0) }};
+    const metalLevel = {{ user.metal_level|default(0) }};
+    const organicLevel = {{ user.organic_level|default(0) }};
+
+    // Responsive detection
+    function getResponsiveSettings() {
+        const width = window.innerWidth;
+        return {
+            isMobile: width <= 768,
+            isSmallMobile: width <= 576,
+            isTiny: width <= 400,
+            titleFontSize: width <= 400 ? '10px' : (width <= 576 ? '11px' : (width <= 768 ? '12px' : '13px')),
+            labelFontSize: width <= 400 ? '9px' : (width <= 576 ? '10px' : (width <= 768 ? '11px' : '12px')),
+            dataLabelFontSize: width <= 400 ? '9px' : (width <= 576 ? '10px' : (width <= 768 ? '11px' : '12px')),
+            chartHeight: width <= 400 ? 220 : (width <= 576 ? 250 : (width <= 768 ? 280 : 320))
+        };
+    }
+
+    let settings = getResponsiveSettings();
+
+    // Common chart options
+    const commonOptions = {
+        chart: {
+            backgroundColor: 'transparent',
+            style: {
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+            }
+        },
+        credits: {
+            enabled: false
+        },
+        accessibility: {
+            enabled: true
+        }
+    };
+
+    // Waste Distribution Pie Chart
+    function createWasteDistributionChart() {
+        Highcharts.chart('wasteDistributionChart', Highcharts.merge(commonOptions, {
+            chart: {
+                type: 'pie',
+                height: settings.chartHeight
+            },
+            title: {
+                text: null
+            },
+            tooltip: {
+                pointFormat: '<b>{point.percentage:.1f}%</b>',
+                style: {
+                    fontSize: settings.labelFontSize
+                }
+            },
+            plotOptions: {
+                pie: {
+                    innerSize: settings.isSmallMobile ? '60%' : (settings.isMobile ? '55%' : '50%'),
+                    depth: 45,
+                    dataLabels: {
+                        enabled: !settings.isTiny,
+                        format: '<b>{point.name}</b><br>{point.percentage:.1f}%',
+                        style: {
+                            fontSize: settings.dataLabelFontSize,
+                            fontWeight: '600',
+                            textOutline: 'none'
+                        },
+                        distance: settings.isMobile ? 10 : 15,
+                        connectorWidth: settings.isMobile ? 1 : 2
+                    },
+                    showInLegend: settings.isTiny
+                }
+            },
+            legend: {
+                enabled: settings.isTiny,
+                itemStyle: {
+                    fontSize: settings.labelFontSize
+                }
+            },
+            series: [{
+                name: 'Waste Type',
+                data: [
+                    {
+                        name: 'Plastic',
+                        y: plasticLevel,
+                        color: '#e74c3c'
+                    },
+                    {
+                        name: 'Metal',
+                        y: metalLevel,
+                        color: '#95a5a6'
+                    },
+                    {
+                        name: 'Organic',
+                        y: organicLevel,
+                        color: '#27ae60'
+                    }
+                ]
+            }]
+        }));
+    }
+
+    // Bin Levels Bar Chart
+    function createBinLevelsChart() {
+        Highcharts.chart('binLevelsChart', Highcharts.merge(commonOptions, {
+            chart: {
+                type: 'column',
+                height: settings.chartHeight
+            },
+            title: {
+                text: null
+            },
+            xAxis: {
+                categories: ['Plastic', 'Metal', 'Organic'],
+                labels: {
+                    style: {
+                        fontSize: settings.labelFontSize,
+                        fontWeight: '600'
+                    },
+                    rotation: settings.isTiny ? -45 : 0,
+                    align: settings.isTiny ? 'right' : 'center'
+                }
+            },
+            yAxis: {
+                min: 0,
+                max: 100,
+                title: {
+                    text: 'Fill Level (%)',
+                    style: {
+                        fontSize: settings.titleFontSize
+                    }
+                },
+                labels: {
+                    style: {
+                        fontSize: settings.labelFontSize
+                    }
+                }
+            },
+            tooltip: {
+                valueSuffix: '%',
+                style: {
+                    fontSize: settings.labelFontSize
+                }
+            },
+            plotOptions: {
+                column: {
+                    dataLabels: {
+                        enabled: true,
+                        format: '{y}%',
+                        style: {
+                            fontSize: settings.dataLabelFontSize,
+                            fontWeight: 'bold',
+                            textOutline: 'none'
+                        }
+                    },
+                    borderRadius: settings.isMobile ? 4 : 6,
+                    pointPadding: 0.1,
+                    groupPadding: settings.isMobile ? 0.1 : 0.15
+                }
+            },
+            series: [{
+                name: 'Current Level',
+                data: [
+                    { y: plasticLevel, color: '#e74c3c' },
+                    { y: metalLevel, color: '#95a5a6' },
+                    { y: organicLevel, color: '#27ae60' }
+                ],
+                showInLegend: false
+            }]
+        }));
+    }
+
+    // Overall Capacity Gauge
+    function createGaugeChart() {
+        const averageLevel = Math.round((plasticLevel + metalLevel + organicLevel) / 3);
+
+        Highcharts.chart('gaugeChart', Highcharts.merge(commonOptions, {
+            chart: {
+                type: 'solidgauge',
+                height: settings.isTiny ? 220 : (settings.isSmallMobile ? 240 : (settings.isMobile ? 260 : 300))
+            },
+            title: {
+                text: null
+            },
+            pane: {
+                startAngle: -90,
+                endAngle: 90,
+                background: {
+                    backgroundColor: '#EEE',
+                    innerRadius: '60%',
+                    outerRadius: '100%',
+                    shape: 'arc'
+                }
+            },
+            yAxis: {
+                min: 0,
+                max: 100,
+                stops: [
+                    [0.3, '#27ae60'],
+                    [0.6, '#f39c12'],
+                    [0.9, '#e74c3c']
+                ],
+                lineWidth: 0,
+                tickWidth: 0,
+                minorTickInterval: null,
+                tickAmount: 2,
+                title: {
+                    y: settings.isMobile ? -60 : -70,
+                    text: 'Average Fill Level',
+                    style: {
+                        fontSize: settings.titleFontSize
+                    }
+                },
+                labels: {
+                    y: 16,
+                    style: {
+                        fontSize: settings.labelFontSize
+                    }
+                }
+            },
+            plotOptions: {
+                solidgauge: {
+                    dataLabels: {
+                        y: 5,
+                        borderWidth: 0,
+                        useHTML: true,
+                        format: '<div style="text-align:center"><span style="font-size:' +
+                                (settings.isTiny ? '18px' : (settings.isSmallMobile ? '20px' : (settings.isMobile ? '22px' : '25px'))) +
+                                ';font-weight:bold">{y}%</span></div>'
+                    }
+                }
+            },
+            series: [{
+                name: 'Capacity',
+                data: [averageLevel]
+            }]
+        }));
+    }
+
+    // Initialize all charts
+    function initializeCharts() {
+        createWasteDistributionChart();
+        createBinLevelsChart();
+        createGaugeChart();
+    }
+
+    // Debounced resize handler
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            settings = getResponsiveSettings();
+            initializeCharts();
+        }, 250);
+    });
+
+    // Auto refresh (optional - can be removed if not needed)
+    // setTimeout(function() {
+    //     location.reload();
+    // }, 300000); // 5 minutes instead of 30 seconds
+
+    // Initialize charts when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+
+        // Remove loading animation
+        const charts = document.querySelectorAll('.chart-wrapper');
+        charts.forEach(chart => {
+            chart.classList.remove('loading');
+        });
+    });
+
+    // Performance optimization: Pause animations when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Pause any animations or timers
+        }
+    });
+</script>
+{% endblock %}
